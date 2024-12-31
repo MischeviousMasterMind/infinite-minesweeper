@@ -44,18 +44,10 @@ public class Frame extends JPanel implements ActionListener, MouseListener
 
 		ArrayList<Minefield> fields = new ArrayList<Minefield>();
 		
-		for(int i = 0; i < 10; i++)
-		{
-			fields.add(new Minefield());
-		}
-
-		for(Minefield field : fields)
-		{
-			System.out.println(field);
-		}
+		Minefield myField = new Minefield("1029393");
 		
-		System.out.println("Number of Configurations: " + fields.get(1).numberOfConfigurations());
-		System.out.println(ExtendedMath.nPr(3,2));
+		System.out.println(myField.getSeed());
+		
 	}
 
 	@Override
