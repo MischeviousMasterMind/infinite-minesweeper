@@ -5,17 +5,20 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.awt.event.MouseMotionListener;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.PrintWriter;
 import java.util.ArrayList;
-import java.util.Comparator;
+import java.util.Scanner;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 
-import java.math.*;
-
-public class Frame extends JPanel implements ActionListener, MouseListener
+public class Frame extends JPanel implements ActionListener, MouseListener, MouseMotionListener
 {
 
+	static File myFile = new File("random-numbers.csv");
 	final static int WIDTH = 1000, HEIGHT = 1000;
 
 	public Frame()
@@ -39,15 +42,57 @@ public class Frame extends JPanel implements ActionListener, MouseListener
 	public static void main(String[] args)
 	{
 		// TODO Auto-generated method stub
+		
+		Scanner keyboard = new Scanner(System.in);
+		
+//		Frame frame = new Frame();
 
-		Frame frame = new Frame();
-
-		ArrayList<Minefield> fields = new ArrayList<Minefield>();
+		Game myGame = new Game(16, 16, 32);
 		
-		Minefield myField = new Minefield("1029393");
+		System.out.println("Game is starting...");
+		myGame.start();
 		
-		System.out.println(myField.getSeed());
+		myGame.printBoard();
+		System.out.println();
 		
+		while(true)
+		{
+			System.out.println("Do you want to flag a mine? (y/n) ");
+			String answer = keyboard.nextLine();
+			
+			if(answer.contains("n"))
+			{
+				System.out.println("What tile do you want to sweep next?");
+				
+				System.out.print("X Coordinate: ");
+				int x = keyboard.nextInt();
+				
+				System.out.print("Y Coordinate: ");
+				int y = keyboard.nextInt();
+				
+				System.out.println(myGame.sweep(y, x));
+				System.out.println();
+				myGame.printBoard();
+				System.out.println();
+			}
+			else
+			{
+				System.out.println("What tile do you want to flag?");
+				
+				System.out.print("X Coordinate: ");
+				int x = keyboard.nextInt();
+				
+				System.out.print("Y Coordinate: ");
+				int y = keyboard.nextInt();
+				
+				System.out.println(myGame.flag(y, x));
+				System.out.println();
+				myGame.printBoard();
+				System.out.println();
+			}
+			
+			keyboard.nextLine();
+		}
 	}
 
 	@Override
@@ -90,6 +135,20 @@ public class Frame extends JPanel implements ActionListener, MouseListener
 	{
 		// TODO Auto-generated method stub
 
+	}
+
+	@Override
+	public void mouseDragged(MouseEvent e)
+	{
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void mouseMoved(MouseEvent e)
+	{
+		// TODO Auto-generated method stub
+		
 	}
 
 }

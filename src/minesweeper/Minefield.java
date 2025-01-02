@@ -3,56 +3,48 @@ package minesweeper;
 import java.math.*;
 import java.util.ArrayList;
 import java.util.Random;
-import java.util.random.*;
 
-public class Minefield
+public class Minefield extends Field
 {
 	private static ArrayList<Integer> fieldSizes = new ArrayList<Integer>();
 	private static ArrayList<BigInteger> listOfNumberOfConfigurations = new ArrayList<BigInteger>();
 	
+	private int[] mineLocations = null;
+	
 	private static Random random = new Random();
 	
-	private boolean hasGenerated = false;
-	private boolean[][] field;
-	
-	private int width = 16, height = 16, numberOfMines = 16;
-	private BigInteger seed;
+	private int numberOfMines = 16;
+	private BigInteger seed = null;
 
 	public Minefield()
 	{
-		field = new boolean[width][height];
-		
-		seed = new BigInteger(numberOfConfigurations().bitLength(), 0, random).mod(numberOfConfigurations());
+		super();
 	}
-
+	
 	public Minefield(String seed)
 	{
-		field = new boolean[width][height];
+		super();
 		
 		this.seed = new BigInteger(seed).mod(numberOfConfigurations());
 	}
 	
 	public Minefield(BigInteger seed)
 	{
-		field = new boolean[width][height];
+		super();
 		
 		this.seed = seed.mod(numberOfConfigurations());
 	}
 	
 	public Minefield(int width, int height, int numberOfMines)
 	{
-		this.width = width;
-		this.height = height;
-		this.numberOfMines = numberOfMines;
+		super(width, height);
 
-		field = new boolean[width][height];
-		
-		seed = new BigInteger(numberOfConfigurations().bitLength(), 0, random).mod(numberOfConfigurations());
+		this.numberOfMines = numberOfMines;
 	}
 	
-	public Minefield(int width, int height, int mines, String seed)
+	public Minefield(int width, int height, int numberOfMines, String seed)
 	{
-		this(width, height, mines);
+		this(width, height, numberOfMines);
 		
 		this.seed = new BigInteger(seed).mod(numberOfConfigurations());
 	}
@@ -66,10 +58,7 @@ public class Minefield
 	
 	public Minefield(boolean[][] field)
 	{
-		this.field = field;
-		
-		width = field.length;
-		height = field[0].length;
+		super(field);
 		
 		numberOfMines = 0;
 		for(boolean[] row : field)
@@ -79,17 +68,18 @@ public class Minefield
 				if(tile) numberOfMines++;
 			}
 		}
-		
-		seed = Minefield.findSeed(field);
 	}
-
-	public int generate()
+	
+	public int generateWithSeed()
 	{
-		if(hasGenerated) return -1; // method will refuse to generate the minefield if it has already been generated
 		
-		hasGenerated = true;
+		if(mineLocations != null) return -1; // method will refuse to generate the minefield if it has already been generated
 		
-		BigInteger seed = this.seed;
+		mineLocations = new int[numberOfMines];
+		
+		if(seed == null) seed = new BigInteger(numberOfConfigurations().bitLength(), 0, random).mod(numberOfConfigurations());
+		
+		BigInteger subSeed = seed;
 		
 		int count = 0;
 		
@@ -97,17 +87,18 @@ public class Minefield
 		{
 			for(int ii = 0; ii < height; ii++)
 			{
-				System.out.print("Comparing " + seed + " to: " + ExtendedMath.nCr(width * height - i * height - ii - 1, numberOfMines - 1 - count));
+				System.out.print("Comparing " + subSeed + " to: " + ExtendedMath.nCr(width * height - i * height - ii - 1, numberOfMines - 1 - count));
 				
-				if(seed.compareTo(ExtendedMath.nCr(width * height - i * height - ii - 1, numberOfMines - 1 - count)) >= 0 && !seed.equals(BigInteger.ZERO))
+				if(subSeed.compareTo(ExtendedMath.nCr(width * height - i * height - ii - 1, numberOfMines - 1 - count)) >= 0 && !subSeed.equals(BigInteger.ZERO))
 				{
 					System.out.println(" SUBTRACTING!");
-					seed = seed.subtract(ExtendedMath.nCr(width * height - i * height - ii - 1, numberOfMines - 1 - count));
+					subSeed = subSeed.subtract(ExtendedMath.nCr(width * height - i * height - ii - 1, numberOfMines - 1 - count));
 				}
 				else
 				{
 					System.out.println(" adding a mine!");
 					field[i][ii] = true;
+					mineLocations[count] = i * height + ii;
 					count++;
 					
 					if(count == numberOfMines) {
@@ -120,10 +111,73 @@ public class Minefield
 		return 0;
 	}
 	
-	public void regenerate()
+	public int generateWithSeed(String seed)
 	{
-		hasGenerated = false;
-		generate();
+		this.seed = new BigInteger(seed).mod(numberOfConfigurations());
+		return generateWithSeed();
+	}
+	
+	/** Generates the minefield without using a seed; much more efficient than {@link generateWithSeed} since it doesn't have to invoke the {@link BigInteger} class
+	 * <p>
+	 * Seed has to be found after this Minefield has been generated using {@link getSeed} 
+	 * 
+	 * @see generateWithSeed
+	 * @see getSeed
+	 * @return 
+	 * {@code 0} if the generation was successful
+	 * <p>
+	 * {@code -1} if the minefield has been already generated
+	 * 
+	 */
+	public ArrayList<Integer> generateWithoutSeed() {
+		
+		if(mineLocations != null) return null; // method will refuse to generate the minefield if it has already been generated
+		
+		ArrayList<Integer> mines = new ArrayList<Integer>(0);
+		
+		for(int i = 0; i < numberOfMines; i++)
+		{
+			int newMine = (int)(Math.random() * width * height);
+			
+			while(mines.contains(newMine))
+			{
+				newMine = (int)(Math.random() * width * height);
+				if(newMine >= width * height) newMine = 0;
+			}
+			
+			mines.add(newMine);
+		}
+		
+		int index = 0;
+		
+		mineLocations = new int [numberOfMines];
+		
+		for(int mine : mines)
+		{
+			field[mine / width][mine % width] = true;
+			mineLocations[index] = mine;
+			
+			index++;
+		}
+		
+		return mines;
+	}
+	
+	/** Regenerates the minefield with a different random seed
+	 * 
+	 */
+	public void regenerateWithSeed()
+	{
+		seed = null;
+		mineLocations = null;
+		generateWithSeed();
+	}
+	
+	public void regenerateWithoutSeed()
+	{
+		seed = null;
+		mineLocations = null;
+		generateWithoutSeed();
 	}
 	
 	public BigInteger numberOfConfigurations()
@@ -138,7 +192,7 @@ public class Minefield
 	public String toString()
 	{
 		String telemetry = "Width: " + width + ", Height: " + height + ", Number of Mines: " + numberOfMines + ", Seed: " + seed.toByteArray().toString().substring(3);
-		if(hasGenerated)
+		if(mineLocations != null)
 		{
 			telemetry = "[GENERATED] " + telemetry;
 		}
@@ -149,24 +203,11 @@ public class Minefield
 		return telemetry;
 	}
 	
-	public void printField()
-	{
-		for(boolean[] row : field)
-		{
-			System.out.print("{ ");
-			for(boolean tile : row)
-			{
-				System.out.print(tile + " ");
-			}
-			System.out.print("}  ");
-		}
-	}
-	
 	public static BigInteger findSeed(boolean[][] field)
 	{
 		BigInteger seed = BigInteger.ZERO;
 		
-		int count = 0, index = 0;
+		int index = 0;
 		ArrayList<Integer> magicNumbers = new ArrayList<Integer>(0);
 		magicNumbers.add(0);
 		
@@ -178,11 +219,9 @@ public class Minefield
 				{
 					index++;
 					magicNumbers.add(0);
-					count = 0;
 				} else
 				{
 					magicNumbers.set(index, magicNumbers.get(index) + 1);
-					count++;
 				}
 			}
 		}
@@ -218,30 +257,17 @@ public class Minefield
 		
 		return seed;
 	}
-	
-	public boolean isGenerated()
-	{
-		return hasGenerated;
-	}
 
 	public BigInteger getSeed()
 	{
+		if(seed == null && (mineLocations == null)) return null;
+		if(seed == null) seed = findSeed(this.field);
 		return seed;
 	}
-
-	public boolean[][] getField()
+	
+	public int[] getMineLocations()
 	{
-		return field;
-	}
-
-	public int getWidth()
-	{
-		return width;
-	}
-
-	public int getHeight()
-	{
-		return height;
+		return mineLocations;
 	}
 
 	public int getNumberOfMines()
