@@ -1,3 +1,9 @@
+const canvas = document.getElementById("canvas");
+
+window.addEventListener("resize", adjustCanvasSize);
+
+adjustCanvasSize();
+
 main();
 
 function main() {
@@ -18,6 +24,27 @@ function main() {
 
             print(1);
 
+            draw();
         });
+}
+
+function adjustCanvasSize() {
+
+    canvas.setAttribute("width", window.innerWidth);
+    canvas.setAttribute("height", window.innerHeight);
+
+}
+
+function draw() {
+
+    const ctx = canvas.getContext("2d");
+
+    ctx.beginPath();
+    ctx.rect(window.innerWidth / 2, window.innerHeight / 2, 10, 10);
+    ctx.fillStyle = "000000";
+    ctx.fill();
+    ctx.closePath();
+
+    requestAnimationFrame(draw);
 
 }
